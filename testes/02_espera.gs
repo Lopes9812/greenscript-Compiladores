@@ -1,0 +1,6 @@
+# Espera entre comandos
+ABRIR();
+ESPERAR(60);   # um minuto
+FECHAR();
+ESPERAR(0);
+ESPERAR(123456789012345678901234567890);
