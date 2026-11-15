@@ -51,4 +51,43 @@ As palavras reservadas devem utilizar como categoria o próprio lexema, conforme
 - Reconhecer candidatos lexicais inválidos com a expressão `[A-Za-z0-9_-]+`, emitindo um único erro por candidato.
 - Tratar qualquer outro carácter isolado como um erro lexical.
 - Manter corretamente o número da linha, incluindo em ficheiros com finais de linha CRLF.
-- Garantir o funcionamento com ficheiros vazios e
+- Tratar um carácter UTF-8 multibyte (por exemplo, `§`) como um único erro lexical.
+- Garantir o funcionamento com ficheiros vazios e com ficheiros sem mudança de linha final.
+
+## 3. Estrutura do projeto
+
+```
+src/greenscript.l   código-fonte FLEX do analisador
+src/Makefile        compilação
+testes/             ficheiros de entrada (.gs), resultados esperados (.esp) e run_tests.sh
+README.md           este ficheiro
+```
+
+## 4. Ferramentas utilizadas
+
+- FLEX 2.6.4
+- GCC (testado com GCC 13)
+- `make` e `sh` (para compilar e executar os testes)
+
+## 5. Compilação e execução
+
+```sh
+cd src
+make                          # gera o executável ./greenscript
+./greenscript ../testes/12_exemplo_enunciado.gs
+make clean                    # remove lex.yy.c e o executável
+```
+
+O programa recebe o caminho do ficheiro como argumento e termina com código de saída diferente de zero se existirem erros lexicais.
+
+## 6. Testes
+
+```sh
+sh testes/run_tests.sh
+```
+
+O script compila o analisador, executa cada ficheiro `.gs` e compara a saída com o `.esp` correspondente. Resultado atual: 12/12 testes passam.
+
+## 7. Fontes
+
+Ferramentas e bibliotecas utilizadas: FLEX e a biblioteca standard do C. Outras fontes estão identificadas no relatório.

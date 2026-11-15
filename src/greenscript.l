@@ -16,6 +16,7 @@ LETRA       [A-Za-z]
 CANDIDATO   [A-Za-z0-9_-]+
 ID_ESTUFA   EST-[A-Z]{2}[0-9]{2}
 INTEIRO     (0|[1-9][0-9]*)
+UTF8CHAR    ([\xC2-\xDF][\x80-\xBF])|([\xE0-\xEF][\x80-\xBF][\x80-\xBF])|([\xF0-\xF4][\x80-\xBF][\x80-\xBF][\x80-\xBF])
 
 %%
 
@@ -53,6 +54,7 @@ INTEIRO     (0|[1-9][0-9]*)
 \#[^\r\n]*         { /* Comentário até ao fim da linha ou do ficheiro. */ }
 
 {CANDIDATO}         { erro(); }
+{UTF8CHAR}          { erro(); /* carácter UTF-8 multibyte = um único erro */ }
 .                   { erro(); }
 
 %%
