@@ -1,0 +1,144 @@
+==============================================================
+ GREENSCRIPT - TP2 (Analise lexical e sintatica)
+ Divisao de tarefas por 3 elementos
+==============================================================
+
+ESTADO ATUAL
+- O repositorio so tem o TP1 (scanner FLEX, 12 testes, README, relatorio .docx) e o PDF do enunciado do TP2.
+- O TP2 ainda nao esta feito: nao existe .y, parser nem testes novos.
+- O scanner do TP1 tem de ser adaptado e os testes/README/relatorio refeitos.
+
+O QUE MUDA NO SCANNER (resumo)
+- Hifen fora de EST- passa a ser sempre MENOS (10-2 -> INTEIRO MENOS INTEIRO).
+- Novos tokens: PROGRAMA, MAIS, MENOS, VEZES.
+- Candidato "EST-": consumir EST-[A-Za-z0-9_]*; so e valido se for exatamente EST-AA01.
+- Restantes candidatos: [A-Za-z0-9_]+ (sem hifen), palavra reservada ou inteiro, senao erro.
+- O main() passa para o parser; o scanner devolve tokens ao BISON (yylval, return TOKEN).
+- Acrescentar %option nounput noinput (elimina os warnings do -Wall).
+
+--------------------------------------------------------------
+ 1. CONTRATO COMUM (fazer os 3 juntos, ~1 hora, ANTES de comecar)
+--------------------------------------------------------------
+[ ] Nomes dos tokens: os do TP1 + PROGRAMA, MAIS, MENOS, VEZES
+[ ] Formato das mensagens (os .esp dependem disto):
+      ERRO lexical na linha N: 'lexema'
+      ERRO sintatico na linha N: token inesperado 'lexema'
+      ERRO sintatico: fim de ficheiro inesperado
+      Ficheiro invalido
+      Analise concluida: ficheiro lexical e sintaticamente valido
+[ ] Politica de erro: parar no primeiro erro (sem recuperacao).
+    Decidir: erro lexical termina logo (proposta) OU devolve token de erro ao parser.
+[ ] Codigo de saida: 0 se valido, diferente de 0 se invalido
+[ ] Nome dos ficheiros: src/greenscript.l, src/greenscript.y, src/Makefile
+[ ] Gramatica de partida (ja testada: bison -Wall, 0 conflitos):
+      ficheiro   : programas
+      programas  : programa | programas programa
+      programa   : PROGRAMA ID_ESTUFA bloco
+      bloco      : '{' instrucoes '}'
+      instrucoes : instrucao | instrucoes instrucao
+      instrucao  : LIGAR '(' ID_ESTUFA ')' ';'
+                 | DESLIGAR '(' ')' ';' | ABRIR '(' ')' ';'
+                 | FECHAR '(' ')' ';'   | PARAR '(' ')' ';'
+                 | AQUECER '(' expr ')' ';'
+                 | REGAR '(' expr ',' expr ')' ';'
+                 | ESPERAR '(' expr ')' ';'
+                 | REPETIR '(' expr ')' bloco
+                 | SE '(' condicao ')' bloco
+                 | SE '(' condicao ')' bloco SENAO bloco
+      condicao   : HUMIDADE '(' INTEIRO ')' op expr
+      expr       : expr MAIS termo | expr MENOS termo | termo
+      termo      : termo VEZES fator | fator
+      fator      : INTEIRO | '(' expr ')'
+
+--------------------------------------------------------------
+ 2. PESSOA A - LEXICO, INTEGRACAO E DIAGNOSTICO
+    (cotacao: 3 valores lexico/integracao + 3 valores diagnostico)
+--------------------------------------------------------------
+[ ] Adaptar src/greenscript.l:
+      - novos tokens PROGRAMA, MAIS, MENOS, VEZES
+      - regra do candidato EST-... e regra [A-Za-z0-9_]+ (sem hifen)
+      - retirar main() e os printf de tokens; fazer return TOKEN
+      - %option nounput noinput
+[ ] Passar yylval/yytext e manter yylineno (incluindo CRLF, ficheiro sem \n final)
+[ ] Tratar UTF-8 multibyte como um unico erro lexical (manter regra do TP1)
+[ ] Escrever o main(): receber o caminho na linha de comandos, abrir o ficheiro,
+    chamar yyparse(), imprimir a conclusao, devolver o codigo de saida
+[ ] Implementar yyerror(): linha + lexema, ou "fim de ficheiro"
+[ ] Distinguir claramente erro lexical de erro sintatico
+[ ] Atualizar src/Makefile (bison -d, flex, gcc) - tem de compilar de raiz
+[ ] Dar o greenscript.tab.h ao B assim que estiver pronto
+
+--------------------------------------------------------------
+ 3. PESSOA B - GRAMATICA E PARSER (BISON)
+    (cotacao: 5 valores gramatica + 6 valores reconhecimento sintatico)
+--------------------------------------------------------------
+[ ] Escrever src/greenscript.y a partir da gramatica de partida
+[ ] Declarar todos os %token de acordo com o contrato
+[ ] Garantir ZERO conflitos shift/reduce e reduce/reduce:
+      bison -Wall --report=all greenscript.y   (nao usar %expect)
+[ ] Garantir a precedencia (* sobre + e -) e associatividade a esquerda:
+      2 + 3 * 4 = 2 + (3 * 4)   e   8 - 3 - 1 = (8 - 3) - 1
+[ ] Garantir SE/SENAO sem ambiguidade (chavetas obrigatorias, SENAO so apos bloco de SE,
+    sem "SENAO SE", maximo um SENAO por SE)
+[ ] Garantir que o fim de ficheiro e validado (nao aceitar apenas um prefixo valido)
+[ ] Garantir: ficheiro vazio invalido; blocos nunca vazios; sem ';' apos bloco;
+    HUMIDADE so no lado esquerdo de uma condicao e com INTEIRO como zona
+[ ] Preparar a explicacao de precedencia/associatividade para o relatorio e para a discussao
+[ ] Rever os testes sintaticamente invalidos escritos pelo C
+
+--------------------------------------------------------------
+ 4. PESSOA C - TESTES, RELATORIO E ENTREGA
+    (cotacao: 3 valores testes/relatorio + apoio aos 5 da gramatica)
+--------------------------------------------------------------
+[ ] Escrever 16 ou mais ficheiros em testes/ (.gs + .esp com o resultado esperado)
+
+    6 VALIDOS:
+      [ ] programa minimo
+      [ ] expressoes e ESPERAR (incluir 10-2, 8-3-1 e parenteses)
+      [ ] repeticoes aninhadas (pelo menos 2 niveis)
+      [ ] SE com e sem SENAO, os 6 operadores relacionais, HUMIDADE(2)<=30
+      [ ] condicionais aninhadas dentro de REPETIR (mostrar a associacao de cada SENAO)
+      [ ] multiplos programas, com comentarios e separadores variados
+
+    2 COM ERROS LEXICAIS:
+      [ ] candidatos malformados (EST-AA001, 012, 12abc)
+      [ ] caracteres desconhecidos, incluindo = e ! isolados
+
+    8 LEXICAMENTE VALIDOS MAS SINTATICAMENTE INVALIDOS:
+      [ ] argumentos incorretos (LIGAR(); / REGAR(2 15); / AQUECER(-5);)
+      [ ] falta de ponto e virgula
+      [ ] expressao incompleta (AQUECER(20 + );)
+      [ ] chaveta em falta
+      [ ] bloco vazio (REPETIR(2) { })
+      [ ] ficheiro vazio
+      [ ] SENAO isolado
+      [ ] condicao malformada (HUMIDADE(2) < < 30)
+
+[ ] Reescrever testes/run_tests.sh: comparar a saida completa e o codigo de saida
+[ ] Escrever o relatorio em PDF (maximo 4 paginas) com nomes e numeros, contendo:
+      - gramatica BNF/EBNF (terminais, nao terminais, simbolo inicial)
+      - estrategia de precedencia e associatividade (explicada, nao so aceite)
+      - regras dos condicionais (SE/SENAO)
+      - ligacao entre o analisador lexico e o sintatico
+      - resumo dos testes
+      - fontes/bibliotecas utilizadas
+[ ] Reescrever o README (ferramentas, compilacao, execucao, testes) - ainda diz "TP1"
+[ ] Montar o ZIP TP2_numero1_numero2_numero3.zip com: src/, testes/, README, relatorio PDF
+[ ] Verificar que compila a partir do ZIP, sem depender do TP1
+
+--------------------------------------------------------------
+ 5. CALENDARIO SUGERIDO
+--------------------------------------------------------------
+Dia 1
+  - Todos: contrato comum
+  - A: scanner adaptado        B: greenscript.y
+  - C: esqueleto do relatorio + testes validos (nao dependem do formato dos erros)
+Dia 2
+  - A + B: integrar (make + primeiros testes)
+  - C: .esp dos testes invalidos (quando o formato de mensagens estiver estavel)
+Dia 3
+  - Todos: correr run_tests.sh, corrigir falhas
+  - C: fechar PDF, README e ZIP
+  - Todos: ensaiar a demonstracao (15 min por grupo, o docente executa testes novos)
+
+LEMBRETE: todos os elementos tem de saber explicar toda a solucao na discussao.
