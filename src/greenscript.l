@@ -1,4 +1,5 @@
 %option noyywrap yylineno
+%x COMENTARIO_LINHA COMENTARIO_BLOCO
 
 %{
 #include <stdio.h>
@@ -6,9 +7,11 @@
 
 static unsigned long total_tokens = 0;
 static unsigned long total_erros = 0;
+static int linha_inicio_comentario = 1;
 
 static void emitir(const char *categoria);
 static void erro(void);
+static void erro_comentario_nao_terminado(void);
 %}
 
 DIGITO      [0-9]
@@ -16,7 +19,7 @@ LETRA       [A-Za-z]
 CANDIDATO   [A-Za-z0-9_-]+
 ID_ESTUFA   EST-[A-Z]{2}[0-9]{2}
 INTEIRO     (0|[1-9][0-9]*)
-UTF8CHAR    ([\xC2-\xDF][\x80-\xBF])|([\xE0-\xEF][\x80-\xBF][\x80-\xBF])|([\xF0-\xF4][\x80-\xBF][\x80-\xBF][\x80-\xBF])
+UTF8CHAR    ([\\xC2-\\xDF][\\x80-\\xBF])|([\\xE0-\\xEF][\\x80-\\xBF][\\x80-\\xBF])|([\\xF0-\\xF4][\\x80-\\xBF][\\x80-\\xBF][\\x80-\\xBF])
 
 %%
 
@@ -50,11 +53,39 @@ UTF8CHAR    ([\xC2-\xDF][\x80-\xBF])|([\xE0-\xEF][\x80-\xBF][\x80-\xBF])|([\xF0-
 ","                 { emitir("VIRGULA"); }
 ";"                 { emitir("PONTO_VIRG"); }
 
+/* Comentarios: mudar de estado evita que o conteudo seja tokenizado. */
+"#"|"//"            { BEGIN(COMENTARIO_LINHA); }
+"/*"                {
+                        linha_inicio_comentario = yylineno;
+                        BEGIN(COMENTARIO_BLOCO);
+                    }
+
+<COMENTARIO_LINHA>\n {
+                        BEGIN(INITIAL);
+                    }
+<COMENTARIO_LINHA>.  { /* Ignorar o conteudo do comentario de linha. */ }
+<COMENTARIO_LINHA><<EOF>> {
+                        BEGIN(INITIAL);
+                        return 0;
+                    }
+
+<COMENTARIO_BLOCO>"*/" {
+                        BEGIN(INITIAL);
+                    }
+<COMENTARIO_BLOCO>\n {
+                        /* yylineno e atualizado automaticamente pelo Flex. */
+                    }
+<COMENTARIO_BLOCO>.  { /* Ignorar o conteudo do comentario de bloco. */ }
+<COMENTARIO_BLOCO><<EOF>> {
+                        erro_comentario_nao_terminado();
+                        BEGIN(INITIAL);
+                        return 0;
+                    }
+
 [ \t\r\n]+        { /* Separadores ignorados. yylineno conta LF. */ }
-\#[^\r\n]*         { /* Comentário até ao fim da linha ou do ficheiro. */ }
 
 {CANDIDATO}         { erro(); }
-{UTF8CHAR}          { erro(); /* carácter UTF-8 multibyte = um único erro */ }
+{UTF8CHAR}          { erro(); /* caracter UTF-8 multibyte = um unico erro */ }
 .                   { erro(); }
 
 %%
@@ -68,6 +99,12 @@ static void emitir(const char *categoria)
 static void erro(void)
 {
     printf("ERRO lexical na linha %d: '%s'\n", yylineno, yytext);
+    total_erros++;
+}
+
+static void erro_comentario_nao_terminado(void)
+{
+    printf("ERRO lexical na linha %d: '/*'\n", linha_inicio_comentario);
     total_erros++;
 }
 
