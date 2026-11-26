@@ -1,7 +1,6 @@
 # GreenScript — TP1
 
 ## 1. Objetivo do projeto
-
 Desenvolver um scanner lexical para a linguagem GreenScript, utilizando **FLEX**, com um formato de saída comum para os testes, o scanner e o relatório.
 
 O projeto está dividido em três áreas de trabalho: implementação do scanner, documentação teórica e preparação dos testes e da entrega.
@@ -46,12 +45,14 @@ As palavras reservadas devem utilizar como categoria o próprio lexema, conforme
 
 ### 2.2. Regras gerais do scanner
 
-- Ignorar espaços, tabulações, `\r`, `\n` e comentários iniciados por `#` até ao fim da linha.
+- Ignorar espaços, tabulações, `\\r`, `\\n` e comentários de linha iniciados por `#` ou `//`.
+- Ignorar comentários de bloco delimitados por `/*` e `*/`, incluindo quando aparecem imediatamente antes ou depois de tokens.
 - Reconhecer as 12 palavras reservadas, os identificadores de estufa, os inteiros, os delimitadores e os seis operadores relacionais.
 - Reconhecer candidatos lexicais inválidos com a expressão `[A-Za-z0-9_-]+`, emitindo um único erro por candidato.
 - Tratar qualquer outro carácter isolado como um erro lexical.
 - Manter corretamente o número da linha, incluindo em ficheiros com finais de linha CRLF.
 - Tratar um carácter UTF-8 multibyte (por exemplo, `§`) como um único erro lexical.
+- Reportar como erro um comentário de bloco que chegue ao fim do ficheiro sem o delimitador `*/`.
 - Garantir o funcionamento com ficheiros vazios e com ficheiros sem mudança de linha final.
 
 ## 3. Estrutura do projeto
@@ -86,7 +87,7 @@ O programa recebe o caminho do ficheiro como argumento e termina com código de 
 sh testes/run_tests.sh
 ```
 
-O script compila o analisador, executa cada ficheiro `.gs` e compara a saída com o `.esp` correspondente. Resultado atual: 12/12 testes passam.
+O script compila o analisador, executa cada ficheiro `.gs` e compara a saída com o `.esp` correspondente. Foram acrescentados casos para comentários de linha, comentários de bloco adjacentes a tokens, comentários multilinha e comentário de bloco não terminado.
 
 ## 7. Fontes
 
