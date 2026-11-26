@@ -1,94 +1,43 @@
-# GreenScript — TP1
+# GreenScript — Analisador lexical
 
-## 1. Objetivo do projeto
-Desenvolver um scanner lexical para a linguagem GreenScript, utilizando **FLEX**, com um formato de saída comum para os testes, o scanner e o relatório.
+O scanner é implementado em `src/greenscript.l`, usando Flex. Reconhece as palavras reservadas, identificadores de estufa, inteiros, operadores, delimitadores e comentários da linguagem.
 
-O projeto está dividido em três áreas de trabalho: implementação do scanner, documentação teórica e preparação dos testes e da entrega.
+## Regras principais
 
-## 2. Decisões comuns
+- Um identificador de estufa válido tem a forma `EST-AA01`.
+- Um candidato iniciado por `EST-` é lido por inteiro; se não corresponder ao formato válido, produz um único erro lexical.
+- Os restantes candidatos são formados por letras, algarismos e underscore. Candidatos inválidos são reportados como uma unidade.
+- O hífen é o operador `MENOS`, pelo que expressões como `10-2` são separadas em três tokens.
+- Os operadores `+` e `*` correspondem a `MAIS` e `VEZES`.
+- Comentários de linha (`#` e `//`) e de bloco (`/* ... */`) são ignorados. Um comentário de bloco sem fecho é um erro lexical.
+- Um carácter UTF-8 válido fora da linguagem é reportado como um único erro.
 
-As seguintes decisões devem ser respeitadas por todos os elementos do grupo, garantindo a compatibilidade entre o scanner, os testes e o relatório.
+## Compilação e testes
 
-| Item | Decisão |
-|---|---|
-| Executável | \`greenscript\` |
-| Execução | \`./greenscript ficheiro.gs\` |
-| Ficheiros de entrada | \`.gs\` |
-| Ficheiros de resultados esperados | \`.esp\` |
-| Formato de cada token | \`linha CATEGORIA lexema\` |
-| Separação dos campos | Um espaço |
-| Número da linha | Linha de início do lexema |
-| Formato de erro | \`ERRO lexical na linha N: 'lexema'\` |
-| Resumo final | \`Tokens: N \| Erros lexicais: M\` |
-| Categoria do token | O próprio nome da categoria, por exemplo, \`LIGAR\`, \`SENAO\` ou \`ID_ESTUFA\` |
+A compilação isolada permite verificar o fluxo de tokens e executar os testes lexicais:
 
-### 2.1. Categorias dos tokens
-
-| Lexema | Categoria |
-|---|---|
-| \`EST-AB07\` | \`ID_ESTUFA\` |
-| \`0\`, \`15\`, \`300\` | \`INTEIRO\` |
-| \`<\` | \`MENOR\` |
-| \`<=\` | \`MENOR_IGUAL\` |
-| \`>\` | \`MAIOR\` |
-| \`>=\` | \`MAIOR_IGUAL\` |
-| \`==\` | \`IGUAL\` |
-| \`!=\` | \`DIFERENTE\` |
-| \`(\` | \`ABRE_PAR\` |
-| \`)\` | \`FECHA_PAR\` |
-| \`{\` | \`ABRE_CHAVETA\` |
-| \`}\` | \`FECHA_CHAVETA\` |
-| \`,\` | \`VIRGULA\` |
-| \`;\` | \`PONTO_VIRG\` |
-
-As palavras reservadas devem utilizar como categoria o próprio lexema, conforme definido no enunciado.
-
-### 2.2. Regras gerais do scanner
-
-- Ignorar espaços, tabulações, \`\r\`, \`\n\` e comentários de linha iniciados por \`#\` ou \`//\`.
-- Ignorar comentários de bloco delimitados por \`/*\` e \`*/\`, incluindo quando aparecem imediatamente antes ou depois de tokens.
-- Reconhecer as 12 palavras reservadas, os identificadores de estufa, os inteiros, os delimitadores e os seis operadores relacionais.
-- Reconhecer candidatos lexicais inválidos com a expressão \`[A-Za-z0-9_-]+\`, emitindo um único erro por candidato.
-- Tratar qualquer outro carácter isolado como um erro lexical.
-- Manter corretamente o número da linha, incluindo em ficheiros com finais de linha CRLF.
-- Tratar um carácter UTF-8 multibyte (por exemplo, \`§\`) como um único erro lexical.
-- Reportar como erro um comentário de bloco que chegue ao fim do ficheiro sem o delimitador \`*/\`.
-- Garantir o funcionamento com ficheiros vazios e com ficheiros sem mudança de linha final.
-
-## 3. Estrutura do projeto
-
-\`\`\`
-src/greenscript.l   código-fonte FLEX do analisador
-src/Makefile        compilação
-testes/             ficheiros de entrada (.gs), resultados esperados (.esp) e run_tests.sh
-README.md           este ficheiro
-\`\`\`
-
-## 4. Ferramentas utilizadas
-
-- FLEX 2.6.4
-- GCC (testado com GCC 13)
-- \`make\` e \`sh\` (para compilar e executar os testes)
-
-## 5. Compilação e execução
-
-\`\`\`sh
+```sh
 cd src
-make                          # gera o executável ./greenscript
-./greenscript ../testes/12_exemplo_enunciado.gs
-make clean                    # remove lex.yy.c e o executável
-\`\`\`
-
-O programa recebe o caminho do ficheiro como argumento e termina com código de saída diferente de zero se existirem erros lexicais.
-
-## 6. Testes
-
-\`\`\`sh
+make
+cd ..
 sh testes/run_tests.sh
-\`\`\`
+```
 
-O script compila o analisador, executa cada ficheiro \`.gs\` e compara a saída com o \`.esp\` correspondente. Foram acrescentados casos para comentários de linha, comentários de bloco adjacentes a tokens, comentários multilinha e comentário de bloco não terminado.
+Depois de existir `src/greenscript.y`, o scanner pode ser ligado ao Bison com:
 
-## 7. Fontes
+```sh
+cd src
+make tp2
+```
 
-Ferramentas e bibliotecas utilizadas: FLEX e a biblioteca standard do C. Outras fontes estão identificadas no relatório.
+No modo isolado, o scanner imprime os tokens e contabiliza todos os erros encontrados. No modo Bison, não tem `main()` nem imprime tokens: devolve os códigos de token ao parser e termina a leitura no primeiro erro lexical.
+
+No modo Bison, o scanner define a variável global `erro_lexico` e devolve EOF depois de apresentar o primeiro erro. O `yyerror()` do parser deve verificar esta variável para não apresentar também uma mensagem de erro sintático para o mesmo problema. O `main()` do parser deve considerar o ficheiro inválido sempre que `erro_lexico` estiver ativa, mesmo que `yyparse()` devolva sucesso.
+
+## Estrutura
+
+```
+src/greenscript.l   scanner Flex
+src/Makefile        compilação isolada e integração com Bison
+testes/             ficheiros .gs e resultados .esp
+```

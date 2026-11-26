@@ -1,0 +1,6 @@
+PROGRAMA EST-AA01 {
+    LIGAR(EST-AA01);
+    AQUECER(10-2);
+    ESPERAR(8-3-1);
+    REGAR(2*3, 4+5);
+}

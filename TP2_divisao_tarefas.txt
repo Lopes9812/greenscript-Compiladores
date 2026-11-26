@@ -65,6 +65,8 @@ O QUE MUDA NO SCANNER (resumo)
     chamar yyparse(), imprimir a conclusao, devolver o codigo de saida
 [ ] Implementar yyerror(): linha + lexema, ou "fim de ficheiro"
 [ ] Distinguir claramente erro lexical de erro sintatico
+- No modo Bison, o scanner interrompe no primeiro erro lexical, define erro_lexico e devolve EOF; yyerror() deve ignorar esse EOF para nao duplicar o diagnostico.
+- O main deve considerar o ficheiro invalido sempre que erro_lexico estiver ativo, mesmo se yyparse() devolver sucesso.
 [ ] Atualizar src/Makefile (bison -d, flex, gcc) - tem de compilar de raiz
 [ ] Dar o greenscript.tab.h ao B assim que estiver pronto
 

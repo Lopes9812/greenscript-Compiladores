@@ -28,13 +28,13 @@ ERRO lexical na linha 5: '@'
 ERRO lexical na linha 5: 'b'
 6 AQUECER AQUECER
 6 ABRE_PAR (
-ERRO lexical na linha 6: '+'
+6 MAIS +
 6 INTEIRO 5
 6 FECHA_PAR )
 7 REGAR REGAR
 7 ABRE_PAR (
 7 INTEIRO 2
-ERRO lexical na linha 7: '*'
+7 VEZES *
 7 INTEIRO 3
 7 FECHA_PAR )
 ERRO lexical na linha 8: '"'
@@ -50,4 +50,4 @@ ERRO lexical na linha 9: '§'
 10 ABRE_PAR (
 10 FECHA_PAR )
 10 PONTO_VIRG ;
-Tokens: 40 | Erros lexicais: 12
+Tokens: 42 | Erros lexicais: 10

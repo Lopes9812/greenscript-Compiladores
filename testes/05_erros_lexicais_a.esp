@@ -11,5 +11,5 @@ ERRO lexical na linha 11: '00'
 ERRO lexical na linha 12: '7up'
 ERRO lexical na linha 13: 'LIGAR_1'
 ERRO lexical na linha 14: 'EST-'
-ERRO lexical na linha 15: '-'
-Tokens: 0 | Erros lexicais: 14
+15 MENOS -
+Tokens: 1 | Erros lexicais: 13
